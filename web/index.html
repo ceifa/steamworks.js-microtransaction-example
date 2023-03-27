@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Test steamworks.js</title>
+
+    <script type="module">
+        import { Steamworks } from './steamworks.js'
+
+        const steamworks = new Steamworks()
+        await steamworks.init()
+
+        const user = document.getElementById('user')
+        user.innerText = JSON.stringify(await steamworks.getUser())
+
+        const reloadPurchases = async () => {
+            const purchases = await steamworks.getPurchases()
+            if (purchases.error) {
+                alert(purchases.error)
+                return
+            }
+
+            const list = document.getElementById('purchases')
+            list.innerHTML = ''
+            for (const purchase of purchases) {
+                const li = document.createElement('li')
+                li.innerText = `Order ${purchase.orderId} - ${purchase.item} (${purchase.quantity}x) - ${purchase.confirmed ? 'Confirmed' : 'Not confirmed'}`
+                list.appendChild(li)
+            }
+        }
+
+        document.getElementById('purchase').addEventListener('click', async (ev) => {
+            ev.target.innerText = 'Purchasing...'
+            const purchase = await steamworks.purchase(123, 2)
+
+            console.log('New purchase', purchase)
+
+            if (purchase.error) {
+                alert(purchase.error)
+                ev.target.innerText = 'Start purchase'
+                return
+            }
+
+            if (purchase.authorized) {
+                await reloadPurchases()
+            }
+
+            ev.target.innerText = 'Start purchase'
+        })
+
+        await reloadPurchases()
+    </script>
+</head>
+
+<body>
+    <h1>User: <span id="user"></span></h1>
+    <button id="purchase">Start purchase</button>
+    <h2>List of purchases</h2>
+    <ul id="purchases"></ul>
+</body>
+
+</html>
